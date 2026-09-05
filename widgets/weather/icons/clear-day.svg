@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs><linearGradient id="sun" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFE76A"/><stop offset="1" stop-color="#FF9F0A"/></linearGradient></defs>
+  <g stroke="#FFD34E" stroke-width="7" stroke-linecap="round">
+    <path d="M64 10v12M64 106v12M10 64h12M106 64h12M26 26l9 9M93 93l9 9M102 26l-9 9M35 93l-9 9"/>
+  </g>
+  <circle cx="64" cy="64" r="28" fill="url(#sun)"/>
+</svg>
+

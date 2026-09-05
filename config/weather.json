@@ -1,0 +1,11 @@
+{
+  "units": "imperial",
+  "latitude": null,
+  "longitude": null,
+  "location_name": null,
+  "auto_location": true,
+  "size": "small",
+  "anchor": "top-right",
+  "margin_x": 24,
+  "margin_y": 56
+}

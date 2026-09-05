@@ -1,0 +1,13 @@
+[Unit]
+Description=COSMIC desktop weather widget
+PartOf=graphical-session.target
+After=graphical-session.target network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 %h/.local/share/cosmic-weather-widget/weather_widget.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target

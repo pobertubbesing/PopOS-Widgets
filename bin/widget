@@ -1,0 +1,75 @@
+#!/usr/bin/python3
+"""Open and inspect the local COSMIC desktop widgets."""
+
+import subprocess
+import sys
+
+
+WIDGETS = (
+    ("Weather", "cosmic-weather-widget.service"),
+    ("Calendar", "cosmic-calendar-widget.service"),
+)
+
+
+def is_running(service):
+    result = subprocess.run(
+        ["systemctl", "--user", "is-active", "--quiet", service],
+        check=False,
+    )
+    return result.returncode == 0
+
+
+def show_widgets():
+    print("Desktop Widgets")
+    print("---------------")
+    for number, (name, service) in enumerate(WIDGETS, start=1):
+        status = "running" if is_running(service) else "stopped"
+        print(f"{number}. {name:<10} [{status}]")
+
+
+def open_widget(number):
+    if not 1 <= number <= len(WIDGETS):
+        print(f"Choose a number from 1 to {len(WIDGETS)}.", file=sys.stderr)
+        return 1
+
+    name, service = WIDGETS[number - 1]
+    if is_running(service):
+        print(f"Unable to open the {name} widget because it is already running.")
+        return 1
+
+    result = subprocess.run(
+        ["systemctl", "--user", "start", service],
+        check=False,
+    )
+    if result.returncode != 0 or not is_running(service):
+        print(f"Could not open the {name} widget.", file=sys.stderr)
+        return 1
+
+    print(f"Opened the {name} widget.")
+    return 0
+
+
+def main():
+    show_widgets()
+    if len(sys.argv) > 1:
+        choice = sys.argv[1]
+    else:
+        try:
+            choice = input("\nSelect a widget number to open (or q to quit): ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print()
+            return 0
+
+    if choice.lower() in {"q", "quit", "exit"}:
+        return 0
+    try:
+        number = int(choice)
+    except ValueError:
+        print("Enter a widget number or q to quit.", file=sys.stderr)
+        return 1
+    return open_widget(number)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs><linearGradient id="moon" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFFFFF"/><stop offset="1" stop-color="#D7E4FF"/></linearGradient></defs>
+  <path d="M76 15C48 24 32 52 40 80c8 28 38 44 65 34-20-4-37-20-42-41-5-22 1-43 13-58z" fill="url(#moon)"/>
+  <path d="M96 18l4 11 11 4-11 4-4 11-4-11-11-4 11-4 4-11z" fill="#FFFFFF"/>
+  <path d="M111 57l2.5 7 7 2.5-7 2.5-2.5 7-2.5-7-7-2.5 7-2.5 2.5-7z" fill="#C9D9FF"/>
+</svg>
+
