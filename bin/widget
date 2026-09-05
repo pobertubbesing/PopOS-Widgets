@@ -9,6 +9,7 @@ WIDGETS = (
     ("Weather", "cosmic-weather-widget.service"),
     ("Calendar", "cosmic-calendar-widget.service"),
     ("System Monitor", "cosmic-system-widget.service"),
+    ("Spotify", "cosmic-spotify-widget.service"),
 )
 
 

@@ -1,6 +1,6 @@
 # Pop!_OS Widgets
 
-Desktop widgets for Pop!_OS with COSMIC: translucent weather, calendar, and system monitor widgets, plus the `widget` terminal command.
+Desktop widgets for Pop!_OS with COSMIC: translucent weather, calendar, system monitor, and Spotify widgets, plus the `widget` terminal command.
 
 ## Install
 
