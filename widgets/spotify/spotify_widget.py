@@ -50,12 +50,12 @@ class SpotifyWidget(Gtk.Window):
         controls = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=18); controls.set_halign(Gtk.Align.START); root.pack_end(controls, False, False, 0)
         for symbol, action in (("⏮", "Previous"), ("▶", "PlayPause"), ("⏭", "Next")):
             button = Gtk.Button(label=symbol); button.set_size_request(44, 36); button.get_style_context().add_class("control"); button.connect("clicked", self._control, action); controls.pack_start(button, False, False, 0)
-            if action == "PlayPause": self.play_button = button; button.set_size_request(56, 44); button.get_style_context().add_class("primary-control")
+            if action == "PlayPause": self.play_button = button
         self.add(self.card); self.proxy = None; self.art_url = None; self._apply_size(self.size_name, False); self.drag = Gtk.GestureDrag.new(self.card); self.drag.set_button(1); self.drag.connect("drag-begin", lambda *_: setattr(self, "drag_start", (self.mx, self.my))); self.drag.connect("drag-update", self._drag); self.drag.connect("drag-end", lambda *_: save({**self.config, "margin_x": self.mx, "margin_y": self.my}))
         self.refresh(); GLib.timeout_add_seconds(2, self.refresh)
 
     def _css(self):
-        css = b'''#spotify-card { background-image: linear-gradient(145deg, rgba(38,38,38,.94), rgba(12,12,12,.92)); border: 1px solid rgba(255,255,255,.12); border-radius: 24px; box-shadow: 0 14px 32px rgba(0,0,0,.35); color: white; font-family: Inter, sans-serif; } .title { color: #1ed760; font-size: 13px; font-weight: 800; } .track { color: white; font-size: 17px; font-weight: 700; } .artist { color: rgba(255,255,255,.62); font-size: 12px; } .control { background: rgba(255,255,255,.10); color: white; border: 1px solid rgba(255,255,255,.16); border-radius: 18px; font-size: 24px; padding: 0; } .primary-control { background: rgba(30,215,96,.28); font-size: 30px; border-radius: 22px; } .control:hover { background: rgba(30,215,96,.35); }'''
+        css = b'''#spotify-card { background-image: linear-gradient(145deg, rgba(38,38,38,.94), rgba(12,12,12,.92)); border: 1px solid rgba(255,255,255,.12); border-radius: 24px; box-shadow: 0 14px 32px rgba(0,0,0,.35); color: white; font-family: Inter, sans-serif; } .title { color: #1ed760; font-size: 13px; font-weight: 800; } .track { color: white; font-size: 17px; font-weight: 700; } .artist { color: rgba(255,255,255,.62); font-size: 12px; } .control { background: rgba(255,255,255,.10); color: white; border: 1px solid rgba(255,255,255,.16); border-radius: 18px; font-size: 24px; padding: 0; } .control:hover { background: rgba(30,215,96,.35); }'''
         provider = Gtk.CssProvider(); provider.load_from_data(css); Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
     def _proxy(self):
