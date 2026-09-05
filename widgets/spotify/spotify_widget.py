@@ -56,7 +56,7 @@ class SpotifyWidget(Gtk.Window):
         self.refresh(); GLib.timeout_add_seconds(2, self.refresh)
 
     def _css(self):
-        css = b'''#spotify-card { background-image: linear-gradient(145deg, rgba(38,38,38,.94), rgba(12,12,12,.92)); border: 1px solid rgba(255,255,255,.12); border-radius: 24px; box-shadow: 0 14px 32px rgba(0,0,0,.35); color: white; font-family: Inter, sans-serif; } .title { color: #1ed760; font-size: 13px; font-weight: 800; } .track { color: white; font-size: 17px; font-weight: 700; } .artist { color: rgba(255,255,255,.62); font-size: 12px; } .control { background: transparent; color: white; border: none; box-shadow: none; border-radius: 0; font-size: 24px; padding: 0; -GtkWidget-focus-line-width: 0; } .control:hover { color: #1ed760; background: transparent; }'''
+        css = b'''#spotify-card { background-image: linear-gradient(145deg, rgba(38,38,38,.94), rgba(12,12,12,.92)); border: 1px solid rgba(255,255,255,.12); border-radius: 24px; box-shadow: 0 14px 32px rgba(0,0,0,.35); color: white; font-family: Inter, sans-serif; } .title { color: #1ed760; font-size: 13px; font-weight: 800; } .track { color: white; font-size: 17px; font-weight: 700; } .artist { color: rgba(255,255,255,.62); font-size: 12px; } .control { background: transparent; color: white; border: none; box-shadow: none; border-radius: 0; font-size: 22px; padding: 0; -GtkWidget-focus-line-width: 0; } .control:hover { color: #1ed760; background: transparent; }'''
         provider = Gtk.CssProvider(); provider.load_from_data(css); Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
     def _proxy(self):
