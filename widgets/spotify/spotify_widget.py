@@ -40,20 +40,22 @@ class SpotifyWidget(Gtk.Window):
         GtkLayerShell.set_margin(self, GtkLayerShell.Edge.TOP if self.anchor.startswith("top") else GtkLayerShell.Edge.BOTTOM, self.my); GtkLayerShell.set_margin(self, GtkLayerShell.Edge.LEFT if self.anchor.endswith("left") else GtkLayerShell.Edge.RIGHT, self.mx)
         self._css()
         self.card = Gtk.EventBox(); self.card.set_name("spotify-card"); self.card.add_events(Gdk.EventMask.BUTTON_PRESS_MASK); self.card.connect("button-press-event", self._menu)
-        root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5); root.set_margin_start(16); root.set_margin_end(16); root.set_margin_top(14); root.set_margin_bottom(14); self.card.add(root)
-        self.art = Gtk.Image(); self.art.set_halign(Gtk.Align.START); root.pack_start(self.art, False, False, 0)
-        self.title = Gtk.Label(label="SPOTIFY", xalign=0); self.title.get_style_context().add_class("title"); root.pack_start(self.title, False, False, 0)
-        self.track = Gtk.Label(label="Spotify is not playing", xalign=0); self.track.get_style_context().add_class("track"); self.track.set_ellipsize(3); root.pack_start(self.track, False, False, 0)
-        self.artist = Gtk.Label(label="Open Spotify to begin", xalign=0); self.artist.get_style_context().add_class("artist"); root.pack_start(self.artist, False, False, 0)
-        controls = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=14); controls.set_halign(Gtk.Align.CENTER); root.pack_end(controls, False, False, 0)
+        root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10); root.set_margin_start(16); root.set_margin_end(16); root.set_margin_top(14); root.set_margin_bottom(14); self.card.add(root)
+        top = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=14); root.pack_start(top, True, True, 0)
+        self.art = Gtk.Image(); self.art.set_halign(Gtk.Align.CENTER); self.art.set_valign(Gtk.Align.CENTER); top.pack_start(self.art, False, False, 0)
+        info = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4); info.set_valign(Gtk.Align.CENTER); top.pack_start(info, True, True, 0)
+        self.title = Gtk.Label(label="SPOTIFY", xalign=0); self.title.get_style_context().add_class("title"); info.pack_start(self.title, False, False, 0)
+        self.track = Gtk.Label(label="Spotify is not playing", xalign=0); self.track.get_style_context().add_class("track"); self.track.set_ellipsize(3); info.pack_start(self.track, False, False, 0)
+        self.artist = Gtk.Label(label="Open Spotify to begin", xalign=0); self.artist.get_style_context().add_class("artist"); info.pack_start(self.artist, False, False, 0)
+        controls = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=18); controls.set_halign(Gtk.Align.CENTER); root.pack_end(controls, False, False, 0)
         for symbol, action in (("⏮", "Previous"), ("▶", "PlayPause"), ("⏭", "Next")):
-            button = Gtk.Button(label=symbol); button.get_style_context().add_class("control"); button.connect("clicked", self._control, action); controls.pack_start(button, False, False, 0)
+            button = Gtk.Button(label=symbol); button.set_size_request(44, 36); button.get_style_context().add_class("control"); button.connect("clicked", self._control, action); controls.pack_start(button, False, False, 0)
             if action == "PlayPause": self.play_button = button
         self.add(self.card); self.proxy = None; self.art_url = None; self._apply_size(self.size_name, False); self.drag = Gtk.GestureDrag.new(self.card); self.drag.set_button(1); self.drag.connect("drag-begin", lambda *_: setattr(self, "drag_start", (self.mx, self.my))); self.drag.connect("drag-update", self._drag); self.drag.connect("drag-end", lambda *_: save({**self.config, "margin_x": self.mx, "margin_y": self.my}))
         self.refresh(); GLib.timeout_add_seconds(2, self.refresh)
 
     def _css(self):
-        css = b'''#spotify-card { background-image: linear-gradient(145deg, rgba(38,38,38,.94), rgba(12,12,12,.92)); border: 1px solid rgba(255,255,255,.12); border-radius: 24px; box-shadow: 0 14px 32px rgba(0,0,0,.35); color: white; font-family: Inter, sans-serif; } .title { color: #1ed760; font-size: 13px; font-weight: 800; } .track { color: white; font-size: 17px; font-weight: 700; } .artist { color: rgba(255,255,255,.62); font-size: 12px; } .control { background: transparent; color: white; border: none; font-size: 20px; }'''
+        css = b'''#spotify-card { background-image: linear-gradient(145deg, rgba(38,38,38,.94), rgba(12,12,12,.92)); border: 1px solid rgba(255,255,255,.12); border-radius: 24px; box-shadow: 0 14px 32px rgba(0,0,0,.35); color: white; font-family: Inter, sans-serif; } .title { color: #1ed760; font-size: 13px; font-weight: 800; } .track { color: white; font-size: 17px; font-weight: 700; } .artist { color: rgba(255,255,255,.62); font-size: 12px; } .control { background: rgba(255,255,255,.10); color: white; border: 1px solid rgba(255,255,255,.16); border-radius: 18px; font-size: 24px; padding: 0; } .control:hover { background: rgba(30,215,96,.35); }'''
         provider = Gtk.CssProvider(); provider.load_from_data(css); Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
     def _proxy(self):
