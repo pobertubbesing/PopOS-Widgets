@@ -71,7 +71,7 @@ class SpotifyWidget(Gtk.Window):
             metadata = self.proxy.get_cached_property("Metadata").unpack(); title = metadata.get("xesam:title"); artist = metadata.get("xesam:artist"); art_url = metadata.get("mpris:artUrl")
             self.track.set_text(str(title.unpack() if hasattr(title, "unpack") else title or "Unknown track")); self.artist.set_text(str((artist.unpack()[0] if hasattr(artist, "unpack") and artist.unpack() else "Unknown artist")))
             status = self.proxy.get_cached_property("PlaybackStatus")
-            self.play_button.set_label("⏸" if status and status.unpack() == "Playing" else "▶")
+            self.play_button.set_label("❚❚" if status and status.unpack() == "Playing" else "▶")
             art_url = art_url.unpack() if hasattr(art_url, "unpack") else art_url
             if art_url != self.art_url:
                 self.art_url = art_url; self._load_art(art_url)
