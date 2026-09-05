@@ -72,13 +72,14 @@ def network_bytes():
 
 
 def format_rate(bytes_per_second):
-    bits = float(bytes_per_second) * 8
-    if bits >= 1_000_000_000:
+    rate = float(bytes_per_second)
+    bits = rate * 8
+    if rate >= 125_000_000:
         value, label = bits / 1_000_000_000, "Gbps"
-    elif bits >= 1_000_000:
+    elif rate >= 1_000:
         value, label = bits / 1_000_000, "Mbps"
     else:
-        value, label = float(bytes_per_second), "B/s"
+        value, label = rate, "B/s"
     return f"{value:.0f} {label}" if value >= 10 else f"{value:.1f} {label}"
 
 
