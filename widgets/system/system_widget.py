@@ -56,6 +56,32 @@ def memory_percent():
     return round(100 * (total - available) / total)
 
 
+def network_bytes():
+    received = sent = 0
+    for line in Path("/proc/net/dev").read_text().splitlines()[2:]:
+        if ":" not in line:
+            continue
+        interface, values = line.split(":", 1)
+        if interface.strip() == "lo":
+            continue
+        fields = values.split()
+        if len(fields) >= 9:
+            received += int(fields[0])
+            sent += int(fields[8])
+    return received, sent
+
+
+def format_rate(bytes_per_second):
+    units = ("B/s", "KB/s", "MB/s", "GB/s")
+    value = float(bytes_per_second)
+    unit = units[0]
+    for unit in units:
+        if value < 1024 or unit == units[-1]:
+            break
+        value /= 1024
+    return f"{value:.0f} {unit}" if value >= 10 else f"{value:.1f} {unit}"
+
+
 class SystemWidget(Gtk.Window):
     def __init__(self):
         super().__init__(title="System Monitor")
@@ -101,6 +127,9 @@ class SystemWidget(Gtk.Window):
         self.memory = self._metric(content, "▦", "MEMORY")
         self.disk = self._metric(content, "◫", "DISK")
         self.load = self._metric(content, "↯", "LOAD")
+        self.download = self._metric(content, "↓", "DOWNLOAD")
+        self.upload = self._metric(content, "↑", "UPLOAD")
+        self.net_previous = (time.monotonic(), *network_bytes())
         self.add(self.card)
         self.card.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         self.card.connect("button-press-event", self._button_press)
@@ -141,6 +170,11 @@ class SystemWidget(Gtk.Window):
             used = 100 * (1 - disk.f_bavail / disk.f_blocks)
             self.disk.set_text(f"{used:.0f}%")
             self.load.set_text(f"{os.getloadavg()[0]:.2f}")
+            now = time.monotonic(); received, sent = network_bytes()
+            elapsed = max(0.1, now - self.net_previous[0])
+            self.download.set_text(format_rate((received - self.net_previous[1]) / elapsed))
+            self.upload.set_text(format_rate((sent - self.net_previous[2]) / elapsed))
+            self.net_previous = (now, received, sent)
         except (OSError, ValueError):
             pass
         return True
