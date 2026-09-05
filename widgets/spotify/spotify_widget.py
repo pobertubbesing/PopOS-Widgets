@@ -15,6 +15,7 @@ from gi.repository import Gdk, GdkPixbuf, Gio, GLib, Gtk, GtkLayerShell
 CONFIG_PATH = Path.home() / ".config/cosmic-spotify-widget/config.json"
 APP_ID = "com.local.CosmicSpotifyWidget"
 SIZES = {"small": (260, 150, 16), "medium": (340, 190, 20), "large": (430, 240, 24)}
+SNAP_GRID = 8
 
 def config():
     value = {"size": "small", "anchor": "top-left", "margin_x": 24, "margin_y": 820}
@@ -104,7 +105,15 @@ class SpotifyWidget(Gtk.Window):
         menu.append(Gtk.SeparatorMenuItem()); exit_item = Gtk.MenuItem(label="Exit Widget"); exit_item.connect("activate", lambda _i: self.destroy()); menu.append(exit_item); menu.show_all(); menu.popup_at_pointer(event); return True
 
     def _drag(self, _gesture, dx, dy):
-        self.mx = max(0, self.drag_start[0] + dx); self.my = max(0, self.drag_start[1] + dy); GtkLayerShell.set_margin(self, GtkLayerShell.Edge.LEFT if self.anchor.endswith("left") else GtkLayerShell.Edge.RIGHT, int(self.mx)); GtkLayerShell.set_margin(self, GtkLayerShell.Edge.TOP if self.anchor.startswith("top") else GtkLayerShell.Edge.BOTTOM, int(self.my))
+        horizontal = 1 if self.anchor.endswith("left") else -1
+        vertical = 1 if self.anchor.startswith("top") else -1
+        self.mx = max(0, self.drag_start[0] + horizontal * dx)
+        self.my = max(0, self.drag_start[1] + vertical * dy)
+        self.mx = round(self.mx / SNAP_GRID) * SNAP_GRID
+        self.my = round(self.my / SNAP_GRID) * SNAP_GRID
+        side = GtkLayerShell.Edge.LEFT if self.anchor.endswith("left") else GtkLayerShell.Edge.RIGHT
+        edge = GtkLayerShell.Edge.TOP if self.anchor.startswith("top") else GtkLayerShell.Edge.BOTTOM
+        GtkLayerShell.set_margin(self, side, int(self.mx)); GtkLayerShell.set_margin(self, edge, int(self.my))
 
 if __name__ == "__main__":
     win = SpotifyWidget(); win.connect("destroy", Gtk.main_quit); win.show_all(); Gtk.main()
