@@ -89,20 +89,6 @@ def temperature_celsius():
     return max(readings) if readings else None
 
 
-def disk_io_bytes():
-    read_bytes = written_bytes = 0
-    for line in Path("/proc/diskstats").read_text().splitlines():
-        fields = line.split()
-        if len(fields) < 10 or fields[2].startswith(("loop", "ram", "zram")):
-            continue
-        try:
-            read_bytes += int(fields[5]) * 512
-            written_bytes += int(fields[9]) * 512
-        except ValueError:
-            continue
-    return read_bytes, written_bytes
-
-
 class SystemWidget(Gtk.Window):
     def __init__(self):
         super().__init__(title="System Monitor")
@@ -147,14 +133,11 @@ class SystemWidget(Gtk.Window):
         content.pack_start(self.title, False, False, 0)
         self.cpu = self._metric(content, "◉", "CPU")
         self.memory = self._metric(content, "▦", "MEMORY")
-        self.disk = self._metric(content, "◫", "DISK")
         self.load = self._metric(content, "↯", "LOAD")
         self.download = self._metric(content, "↓", "DOWNLOAD")
         self.upload = self._metric(content, "↑", "UPLOAD")
         self.temperature = self._metric(content, "♨", "TEMP")
-        self.disk_io = self._metric(content, "⇅", "DISK I/O")
         self.net_previous = (time.monotonic(), *network_bytes())
-        self.disk_previous = (time.monotonic(), *disk_io_bytes())
         self.add(self.card)
         self.card.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         self.card.connect("button-press-event", self._button_press)
@@ -191,21 +174,12 @@ class SystemWidget(Gtk.Window):
         try:
             self.cpu.set_text(f"{cpu_percent()}%")
             self.memory.set_text(f"{memory_percent()}%")
-            disk = os.statvfs(Path.home())
-            used = 100 * (1 - disk.f_bavail / disk.f_blocks)
-            self.disk.set_text(f"{used:.0f}%")
             self.load.set_text(f"{os.getloadavg()[0]:.2f}")
             now = time.monotonic(); received, sent = network_bytes()
             elapsed = max(0.1, now - self.net_previous[0])
             self.download.set_text(format_rate((received - self.net_previous[1]) / elapsed))
             self.upload.set_text(format_rate((sent - self.net_previous[2]) / elapsed))
             self.net_previous = (now, received, sent)
-            disk_now = time.monotonic(); disk_read, disk_written = disk_io_bytes()
-            disk_elapsed = max(0.1, disk_now - self.disk_previous[0])
-            read_rate = (disk_read - self.disk_previous[1]) / disk_elapsed / 1_000_000
-            write_rate = (disk_written - self.disk_previous[2]) / disk_elapsed / 1_000_000
-            self.disk_io.set_text(f"R {read_rate:.1f} / W {write_rate:.1f} MB/s")
-            self.disk_previous = (disk_now, disk_read, disk_written)
             temperature = temperature_celsius()
             if temperature is None:
                 self.temperature.set_text("N/A")
