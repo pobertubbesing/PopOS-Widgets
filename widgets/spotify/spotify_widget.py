@@ -47,6 +47,7 @@ class SpotifyWidget(Gtk.Window):
         controls = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=14); controls.set_halign(Gtk.Align.CENTER); root.pack_end(controls, False, False, 0)
         for symbol, action in (("⏮", "Previous"), ("▶", "PlayPause"), ("⏭", "Next")):
             button = Gtk.Button(label=symbol); button.get_style_context().add_class("control"); button.connect("clicked", self._control, action); controls.pack_start(button, False, False, 0)
+            if action == "PlayPause": self.play_button = button
         self.add(self.card); self._apply_size(self.size_name, False); self.drag = Gtk.GestureDrag.new(self.card); self.drag.set_button(1); self.drag.connect("drag-begin", lambda *_: setattr(self, "drag_start", (self.mx, self.my))); self.drag.connect("drag-update", self._drag); self.drag.connect("drag-end", lambda *_: save({**self.config, "margin_x": self.mx, "margin_y": self.my}))
         self.proxy = None; self.art_url = None; self.refresh(); GLib.timeout_add_seconds(2, self.refresh)
 
@@ -61,10 +62,12 @@ class SpotifyWidget(Gtk.Window):
     def refresh(self):
         self.proxy = self._proxy()
         if not self.proxy:
-            self.track.set_text("Spotify is not playing"); self.artist.set_text("Open Spotify to begin"); self.art.clear(); self.art_url = None; return True
+            self.track.set_text("Spotify is not playing"); self.artist.set_text("Open Spotify to begin"); self.art.clear(); self.art_url = None; self.play_button.set_label("▶"); return True
         try:
             metadata = self.proxy.get_cached_property("Metadata").unpack(); title = metadata.get("xesam:title"); artist = metadata.get("xesam:artist"); art_url = metadata.get("mpris:artUrl")
             self.track.set_text(str(title.unpack() if hasattr(title, "unpack") else title or "Unknown track")); self.artist.set_text(str((artist.unpack()[0] if hasattr(artist, "unpack") and artist.unpack() else "Unknown artist")))
+            status = self.proxy.get_cached_property("PlaybackStatus")
+            self.play_button.set_label("⏸" if status and status.unpack() == "Playing" else "▶")
             art_url = art_url.unpack() if hasattr(art_url, "unpack") else art_url
             if art_url != self.art_url:
                 self.art_url = art_url; self._load_art(art_url)
