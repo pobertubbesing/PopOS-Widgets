@@ -49,8 +49,8 @@ class SpotifyWidget(Gtk.Window):
         for symbol, action in (("⏮", "Previous"), ("▶", "PlayPause"), ("⏭", "Next")):
             button = Gtk.Button(label=symbol); button.get_style_context().add_class("control"); button.connect("clicked", self._control, action); controls.pack_start(button, False, False, 0)
             if action == "PlayPause": self.play_button = button
-        self.add(self.card); self._apply_size(self.size_name, False); self.drag = Gtk.GestureDrag.new(self.card); self.drag.set_button(1); self.drag.connect("drag-begin", lambda *_: setattr(self, "drag_start", (self.mx, self.my))); self.drag.connect("drag-update", self._drag); self.drag.connect("drag-end", lambda *_: save({**self.config, "margin_x": self.mx, "margin_y": self.my}))
-        self.proxy = None; self.art_url = None; self.refresh(); GLib.timeout_add_seconds(2, self.refresh)
+        self.add(self.card); self.proxy = None; self.art_url = None; self._apply_size(self.size_name, False); self.drag = Gtk.GestureDrag.new(self.card); self.drag.set_button(1); self.drag.connect("drag-begin", lambda *_: setattr(self, "drag_start", (self.mx, self.my))); self.drag.connect("drag-update", self._drag); self.drag.connect("drag-end", lambda *_: save({**self.config, "margin_x": self.mx, "margin_y": self.my}))
+        self.refresh(); GLib.timeout_add_seconds(2, self.refresh)
 
     def _css(self):
         css = b'''#spotify-card { background-image: linear-gradient(145deg, rgba(38,38,38,.94), rgba(12,12,12,.92)); border: 1px solid rgba(255,255,255,.12); border-radius: 24px; box-shadow: 0 14px 32px rgba(0,0,0,.35); color: white; font-family: Inter, sans-serif; } .title { color: #1ed760; font-size: 13px; font-weight: 800; } .track { color: white; font-size: 17px; font-weight: 700; } .artist { color: rgba(255,255,255,.62); font-size: 12px; } .control { background: transparent; color: white; border: none; font-size: 20px; }'''
