@@ -82,6 +82,18 @@ def format_rate(bytes_per_second):
     return f"{value:.0f} {unit}" if value >= 10 else f"{value:.1f} {unit}"
 
 
+def temperature_celsius():
+    readings = []
+    for path in Path("/sys/class/thermal").glob("thermal_zone*/temp"):
+        try:
+            value = int(path.read_text().strip()) / 1000
+            if -20 < value < 150:
+                readings.append(value)
+        except (OSError, ValueError):
+            continue
+    return max(readings) if readings else None
+
+
 class SystemWidget(Gtk.Window):
     def __init__(self):
         super().__init__(title="System Monitor")
@@ -129,6 +141,7 @@ class SystemWidget(Gtk.Window):
         self.load = self._metric(content, "↯", "LOAD")
         self.download = self._metric(content, "↓", "DOWNLOAD")
         self.upload = self._metric(content, "↑", "UPLOAD")
+        self.temperature = self._metric(content, "♨", "TEMP")
         self.net_previous = (time.monotonic(), *network_bytes())
         self.add(self.card)
         self.card.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
@@ -175,6 +188,8 @@ class SystemWidget(Gtk.Window):
             self.download.set_text(format_rate((received - self.net_previous[1]) / elapsed))
             self.upload.set_text(format_rate((sent - self.net_previous[2]) / elapsed))
             self.net_previous = (now, received, sent)
+            temperature = temperature_celsius()
+            self.temperature.set_text(f"{temperature:.0f} °C" if temperature is not None else "N/A")
         except (OSError, ValueError):
             pass
         return True
