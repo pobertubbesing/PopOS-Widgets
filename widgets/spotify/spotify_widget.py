@@ -1,13 +1,16 @@
 #!/usr/bin/python3
 """Spotify MPRIS controller widget for the COSMIC desktop."""
 import json
+import urllib.error
+import urllib.request
 from pathlib import Path
 import gi
 gi.require_version("Gtk", "3.0")
 gi.require_version("Gdk", "3.0")
 gi.require_version("Gio", "2.0")
+gi.require_version("GdkPixbuf", "2.0")
 gi.require_version("GtkLayerShell", "0.1")
-from gi.repository import Gdk, Gio, GLib, Gtk, GtkLayerShell
+from gi.repository import Gdk, GdkPixbuf, Gio, GLib, Gtk, GtkLayerShell
 
 CONFIG_PATH = Path.home() / ".config/cosmic-spotify-widget/config.json"
 APP_ID = "com.local.CosmicSpotifyWidget"
@@ -36,6 +39,7 @@ class SpotifyWidget(Gtk.Window):
         self._css()
         self.card = Gtk.EventBox(); self.card.set_name("spotify-card"); self.card.add_events(Gdk.EventMask.BUTTON_PRESS_MASK); self.card.connect("button-press-event", self._menu)
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5); root.set_margin_start(16); root.set_margin_end(16); root.set_margin_top(14); root.set_margin_bottom(14); self.card.add(root)
+        self.art = Gtk.Image(); self.art.set_size_request(54, 54); self.art.set_halign(Gtk.Align.START); root.pack_start(self.art, False, False, 0)
         self.title = Gtk.Label(label="SPOTIFY", xalign=0); self.title.get_style_context().add_class("title"); root.pack_start(self.title, False, False, 0)
         self.track = Gtk.Label(label="Spotify is not playing", xalign=0); self.track.get_style_context().add_class("track"); self.track.set_ellipsize(3); root.pack_start(self.track, False, False, 0)
         self.artist = Gtk.Label(label="Open Spotify to begin", xalign=0); self.artist.get_style_context().add_class("artist"); root.pack_start(self.artist, False, False, 0)
@@ -43,7 +47,7 @@ class SpotifyWidget(Gtk.Window):
         for symbol, action in (("⏮", "Previous"), ("▶", "PlayPause"), ("⏭", "Next")):
             button = Gtk.Button(label=symbol); button.get_style_context().add_class("control"); button.connect("clicked", self._control, action); controls.pack_start(button, False, False, 0)
         self.add(self.card); self._apply_size(self.size_name, False); self.drag = Gtk.GestureDrag.new(self.card); self.drag.set_button(1); self.drag.connect("drag-begin", lambda *_: setattr(self, "drag_start", (self.mx, self.my))); self.drag.connect("drag-update", self._drag); self.drag.connect("drag-end", lambda *_: save({**self.config, "margin_x": self.mx, "margin_y": self.my}))
-        self.proxy = None; self.refresh(); GLib.timeout_add_seconds(2, self.refresh)
+        self.proxy = None; self.art_url = None; self.refresh(); GLib.timeout_add_seconds(2, self.refresh)
 
     def _css(self):
         css = b'''#spotify-card { background-image: linear-gradient(145deg, rgba(38,38,38,.94), rgba(12,12,12,.92)); border: 1px solid rgba(255,255,255,.12); border-radius: 24px; box-shadow: 0 14px 32px rgba(0,0,0,.35); color: white; font-family: Inter, sans-serif; } .title { color: #1ed760; font-size: 13px; font-weight: 800; } .track { color: white; font-size: 17px; font-weight: 700; } .artist { color: rgba(255,255,255,.62); font-size: 12px; } .control { background: transparent; color: white; border: none; font-size: 20px; }'''
@@ -55,12 +59,33 @@ class SpotifyWidget(Gtk.Window):
 
     def refresh(self):
         self.proxy = self._proxy()
-        if not self.proxy: self.track.set_text("Spotify is not playing"); self.artist.set_text("Open Spotify to begin"); return True
+        if not self.proxy:
+            self.track.set_text("Spotify is not playing"); self.artist.set_text("Open Spotify to begin"); self.art.clear(); self.art_url = None; return True
         try:
-            metadata = self.proxy.get_cached_property("Metadata").unpack(); title = metadata.get("xesam:title"); artist = metadata.get("xesam:artist")
+            metadata = self.proxy.get_cached_property("Metadata").unpack(); title = metadata.get("xesam:title"); artist = metadata.get("xesam:artist"); art_url = metadata.get("mpris:artUrl")
             self.track.set_text(str(title.unpack() if hasattr(title, "unpack") else title or "Unknown track")); self.artist.set_text(str((artist.unpack()[0] if hasattr(artist, "unpack") and artist.unpack() else "Unknown artist")))
+            art_url = art_url.unpack() if hasattr(art_url, "unpack") else art_url
+            if art_url != self.art_url:
+                self.art_url = art_url; self._load_art(art_url)
         except (AttributeError, GLib.Error, TypeError, KeyError): pass
         return True
+
+    def _load_art(self, url):
+        if not url:
+            self.art.clear(); return
+        try:
+            if str(url).startswith("file://"):
+                path = str(url)[7:]
+                pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(path, 54, 54, True)
+            elif str(url).startswith("http"):
+                data = urllib.request.urlopen(str(url), timeout=3).read()
+                loader = GdkPixbuf.PixbufLoader(); loader.write(data); loader.close()
+                pixbuf = loader.get_pixbuf().scale_simple(54, 54, GdkPixbuf.InterpType.BILINEAR)
+            else:
+                pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(str(url), 54, 54, True)
+            self.art.set_from_pixbuf(pixbuf)
+        except (OSError, GLib.Error, ValueError, urllib.error.URLError):
+            self.art.clear()
 
     def _control(self, _button, method):
         if self.proxy: self.proxy.call_sync(method, None, Gio.DBusCallFlags.NONE, 1000, None)
