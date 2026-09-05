@@ -48,7 +48,7 @@ class SpotifyWidget(Gtk.Window):
         self.track = Gtk.Label(label="Spotify is not playing", xalign=0); self.track.get_style_context().add_class("track"); self.track.set_ellipsize(3); info.pack_start(self.track, False, False, 0)
         self.artist = Gtk.Label(label="Open Spotify to begin", xalign=0); self.artist.get_style_context().add_class("artist"); info.pack_start(self.artist, False, False, 0)
         controls = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=18); controls.set_halign(Gtk.Align.START); root.pack_end(controls, False, False, 0)
-        for symbol, action in (("⏮", "Previous"), ("▶", "PlayPause"), ("⏭", "Next")):
+        for symbol, action in (("|◀", "Previous"), ("▶", "PlayPause"), ("▶|", "Next")):
             button = Gtk.Button(label=symbol); button.set_size_request(44, 36); button.get_style_context().add_class("control"); button.connect("clicked", self._control, action); controls.pack_start(button, False, False, 0)
             button.get_child().set_halign(Gtk.Align.CENTER); button.get_child().set_valign(Gtk.Align.CENTER); button.get_child().set_xalign(0.5)
             if action == "PlayPause": self.play_button = button
