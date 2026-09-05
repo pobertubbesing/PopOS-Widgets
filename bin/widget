@@ -3,13 +3,15 @@
 
 import subprocess
 import sys
+import json
+from pathlib import Path
 
 
 WIDGETS = (
-    ("Weather", "cosmic-weather-widget.service"),
-    ("Calendar", "cosmic-calendar-widget.service"),
-    ("System Monitor", "cosmic-system-widget.service"),
-    ("Spotify", "cosmic-spotify-widget.service"),
+    ("Weather", "cosmic-weather-widget.service", Path.home() / ".config/cosmic-weather-widget/config.json"),
+    ("Calendar", "cosmic-calendar-widget.service", Path.home() / ".config/cosmic-calendar-widget/config.json"),
+    ("System Monitor", "cosmic-system-widget.service", Path.home() / ".config/cosmic-system-widget/config.json"),
+    ("Spotify", "cosmic-spotify-widget.service", Path.home() / ".config/cosmic-spotify-widget/config.json"),
 )
 
 
@@ -24,7 +26,7 @@ def is_running(service):
 def show_widgets():
     print("Desktop Widgets")
     print("---------------")
-    for number, (name, service) in enumerate(WIDGETS, start=1):
+    for number, (name, service, _config) in enumerate(WIDGETS, start=1):
         status = "running" if is_running(service) else "stopped"
         print(f"{number}. {name:<10} [{status}]")
 
@@ -34,11 +36,18 @@ def open_widget(number):
         print(f"Choose a number from 1 to {len(WIDGETS)}.", file=sys.stderr)
         return 1
 
-    name, service = WIDGETS[number - 1]
+    name, service, config_path = WIDGETS[number - 1]
     if is_running(service):
         print(f"Unable to open the {name} widget because it is already running.")
         return 1
 
+    try:
+        data = json.loads(config_path.read_text()) if config_path.exists() else {}
+        data["enabled"] = True
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+        config_path.write_text(json.dumps(data, indent=2) + "\n")
+    except (OSError, ValueError, TypeError):
+        pass
     result = subprocess.run(
         ["systemctl", "--user", "start", service],
         check=False,

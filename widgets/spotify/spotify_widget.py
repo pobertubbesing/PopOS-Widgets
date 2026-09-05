@@ -27,6 +27,9 @@ def config():
 def save(value):
     CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True); CONFIG_PATH.write_text(json.dumps(value, indent=2) + "\n")
 
+def disable_widget():
+    value = config(); value["enabled"] = False; save(value)
+
 class SpotifyWidget(Gtk.Window):
     def __init__(self):
         super().__init__(title="Spotify")
@@ -110,7 +113,7 @@ class SpotifyWidget(Gtk.Window):
             item = Gtk.RadioMenuItem.new_with_label(None, label) if first is None else Gtk.RadioMenuItem.new_with_label_from_widget(first, label)
             if first is None: first = item
             item.set_active(name == self.size_name); item.connect("toggled", lambda i, n: i.get_active() and self._apply_size(n), name); menu.append(item)
-        menu.append(Gtk.SeparatorMenuItem()); exit_item = Gtk.MenuItem(label="Exit Widget"); exit_item.connect("activate", lambda _i: self.destroy()); menu.append(exit_item); menu.show_all(); menu.popup_at_pointer(event); return True
+        menu.append(Gtk.SeparatorMenuItem()); exit_item = Gtk.MenuItem(label="Exit Widget"); exit_item.connect("activate", lambda _i: (disable_widget(), self.destroy())); menu.append(exit_item); menu.show_all(); menu.popup_at_pointer(event); return True
 
     def _drag(self, _gesture, dx, dy):
         horizontal = 1 if self.anchor.endswith("left") else -1
@@ -124,4 +127,5 @@ class SpotifyWidget(Gtk.Window):
         GtkLayerShell.set_margin(self, side, int(self.mx)); GtkLayerShell.set_margin(self, edge, int(self.my))
 
 if __name__ == "__main__":
-    win = SpotifyWidget(); win.connect("destroy", Gtk.main_quit); win.show_all(); Gtk.main()
+    if config().get("enabled", True):
+        win = SpotifyWidget(); win.connect("destroy", Gtk.main_quit); win.show_all(); Gtk.main()

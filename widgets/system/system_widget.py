@@ -33,6 +33,9 @@ def save_config(config):
     CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
     CONFIG_PATH.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
 
+def disable_widget():
+    config = read_config(); config["enabled"] = False; save_config(config)
+
 
 def cpu_percent():
     def read():
@@ -219,7 +222,7 @@ class SystemWidget(Gtk.Window):
             item.set_active(name == self.size_name); item.connect("toggled", lambda i, n: i.get_active() and self._apply_size(n), name); menu.append(item)
         menu.append(Gtk.SeparatorMenuItem())
         edit_item = Gtk.MenuItem(label="Edit…"); edit_item.connect("activate", self._edit); menu.append(edit_item)
-        exit_item = Gtk.MenuItem(label="Exit Widget"); exit_item.connect("activate", lambda _i: self.destroy()); menu.append(exit_item)
+        exit_item = Gtk.MenuItem(label="Exit Widget"); exit_item.connect("activate", lambda _i: (disable_widget(), self.destroy())); menu.append(exit_item)
         menu.show_all(); menu.popup_at_pointer(event); return True
 
     def _edit(self, _item):
@@ -280,4 +283,5 @@ class SystemWidget(Gtk.Window):
 
 
 if __name__ == "__main__":
-    win = SystemWidget(); win.connect("destroy", Gtk.main_quit); win.show_all(); Gtk.main()
+    if read_config().get("enabled", True):
+        win = SystemWidget(); win.connect("destroy", Gtk.main_quit); win.show_all(); Gtk.main()

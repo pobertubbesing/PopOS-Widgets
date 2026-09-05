@@ -88,6 +88,9 @@ def save_config(config):
     CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
     CONFIG_PATH.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
 
+def disable_widget():
+    config = read_config(); config["enabled"] = False; save_config(config)
+
 
 def fetch_json(url):
     request = urllib.request.Request(
@@ -447,7 +450,7 @@ class WeatherCard(Gtk.Window):
         menu.append(edit_item)
         menu.append(Gtk.SeparatorMenuItem())
         exit_item = Gtk.MenuItem(label="Exit Widget")
-        exit_item.connect("activate", lambda _item: self.destroy())
+        exit_item.connect("activate", lambda _item: (disable_widget(), self.destroy()))
         menu.append(exit_item)
         menu.show_all()
         self.context_menu = menu
@@ -794,6 +797,8 @@ class WeatherCard(Gtk.Window):
 
 
 def main():
+    if not read_config().get("enabled", True):
+        return
     Gtk.init()
     window = WeatherCard()
     window.connect("destroy", Gtk.main_quit)
@@ -803,4 +808,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
