@@ -21,7 +21,7 @@ WIDGET_GAP = 16
 
 
 def read_config():
-    config = {"size": "small", "units": "celsius", "anchor": "top-right", "margin_x": 24, "margin_y": 286}
+    config = {"size": "small", "units": "celsius", "network_units": "mbps", "anchor": "top-right", "margin_x": 24, "margin_y": 286}
     try:
         config.update(json.loads(CONFIG_PATH.read_text(encoding="utf-8")))
     except (OSError, ValueError, TypeError):
@@ -71,10 +71,12 @@ def network_bytes():
     return received, sent
 
 
-def format_rate(bytes_per_second):
-    value = float(bytes_per_second) * 8 / 1_000_000
-    unit = "Mbps"
-    return f"{value:.0f} {unit}" if value >= 10 else f"{value:.1f} {unit}"
+def format_rate(bytes_per_second, network_units):
+    divisors = {"bytes": 1, "mbps": 1_000_000, "gbps": 1_000_000_000}
+    labels = {"bytes": "B/s", "mbps": "Mbps", "gbps": "Gbps"}
+    value = float(bytes_per_second) * 8 / divisors.get(network_units, divisors["mbps"])
+    label = labels.get(network_units, labels["mbps"])
+    return f"{value:.0f} {label}" if value >= 10 else f"{value:.1f} {label}"
 
 
 def temperature_celsius():
@@ -95,6 +97,7 @@ class SystemWidget(Gtk.Window):
         self.config = read_config()
         self.size_name = self.config.get("size", "small")
         self.units = self.config.get("units", "celsius")
+        self.network_units = self.config.get("network_units", "mbps")
         if self.size_name not in SIZE_PRESETS:
             self.size_name = "small"
         self.anchor = self.config.get("anchor", "top-right")
@@ -177,8 +180,8 @@ class SystemWidget(Gtk.Window):
             self.load.set_text(f"{os.getloadavg()[0]:.2f}")
             now = time.monotonic(); received, sent = network_bytes()
             elapsed = max(0.1, now - self.net_previous[0])
-            self.download.set_text(format_rate((received - self.net_previous[1]) / elapsed))
-            self.upload.set_text(format_rate((sent - self.net_previous[2]) / elapsed))
+            self.download.set_text(format_rate((received - self.net_previous[1]) / elapsed, self.network_units))
+            self.upload.set_text(format_rate((sent - self.net_previous[2]) / elapsed, self.network_units))
             self.net_previous = (now, received, sent)
             temperature = temperature_celsius()
             if temperature is None:
@@ -223,9 +226,12 @@ class SystemWidget(Gtk.Window):
         box = dialog.get_content_area(); box.set_spacing(10); box.set_border_width(18)
         label = Gtk.Label(label="Temperature units", xalign=0); box.pack_start(label, False, False, 0)
         combo = Gtk.ComboBoxText(); combo.append("celsius", "Celsius (°C)"); combo.append("fahrenheit", "Fahrenheit (°F)"); combo.set_active_id(self.units); box.pack_start(combo, False, False, 0)
+        net_label = Gtk.Label(label="Network rate units", xalign=0); box.pack_start(net_label, False, False, 0)
+        net_combo = Gtk.ComboBoxText(); net_combo.append("bytes", "Bytes per second (B/s)"); net_combo.append("mbps", "Megabits per second (Mbps)"); net_combo.append("gbps", "Gigabits per second (Gbps)"); net_combo.set_active_id(self.network_units); box.pack_start(net_combo, False, False, 0)
         dialog.show_all()
-        if dialog.run() == Gtk.ResponseType.OK and combo.get_active_id():
-            self.units = combo.get_active_id(); self.config["units"] = self.units; save_config(self.config); self.refresh()
+        if dialog.run() == Gtk.ResponseType.OK and combo.get_active_id() and net_combo.get_active_id():
+            self.units = combo.get_active_id(); self.network_units = net_combo.get_active_id()
+            self.config.update({"units": self.units, "network_units": self.network_units}); save_config(self.config); self.refresh()
         dialog.destroy()
 
     def _drag_begin(self, _gesture, _x, _y): self.drag_start = (self.margin_x, self.margin_y); self.drag_offset = (0, 0)

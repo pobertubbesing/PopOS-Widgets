@@ -1,6 +1,7 @@
 {
   "size": "small",
   "units": "celsius",
+  "network_units": "mbps",
   "anchor": "top-right",
   "margin_x": 24,
   "margin_y": 520
