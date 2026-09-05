@@ -218,6 +218,7 @@ class SystemWidget(Gtk.Window):
 
     def _edit(self, _item):
         dialog = Gtk.Dialog(title="System Monitor Settings", transient_for=self, modal=True)
+        dialog.set_position(Gtk.WindowPosition.MOUSE)
         dialog.add_button("Cancel", Gtk.ResponseType.CANCEL); dialog.add_button("Save", Gtk.ResponseType.OK)
         box = dialog.get_content_area(); box.set_spacing(10); box.set_border_width(18)
         label = Gtk.Label(label="Temperature units", xalign=0); box.pack_start(label, False, False, 0)
