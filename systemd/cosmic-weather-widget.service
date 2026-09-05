@@ -5,6 +5,7 @@ After=graphical-session.target network-online.target
 
 [Service]
 Type=simple
+ExecStartPre=/usr/bin/sleep 5
 ExecStart=/usr/bin/python3 %h/.local/share/cosmic-weather-widget/weather_widget.py
 Restart=on-failure
 RestartSec=5

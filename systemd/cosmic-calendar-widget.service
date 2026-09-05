@@ -5,6 +5,7 @@ After=graphical-session.target
 
 [Service]
 Type=simple
+ExecStartPre=/usr/bin/sleep 5
 ExecStart=/usr/bin/python3 %h/.local/share/cosmic-calendar-widget/calendar_widget.py
 Restart=on-failure
 RestartSec=5
