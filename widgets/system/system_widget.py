@@ -21,7 +21,7 @@ WIDGET_GAP = 16
 
 
 def read_config():
-    config = {"size": "small", "anchor": "top-right", "margin_x": 24, "margin_y": 286}
+    config = {"size": "small", "units": "celsius", "anchor": "top-right", "margin_x": 24, "margin_y": 286}
     try:
         config.update(json.loads(CONFIG_PATH.read_text(encoding="utf-8")))
     except (OSError, ValueError, TypeError):
@@ -72,13 +72,8 @@ def network_bytes():
 
 
 def format_rate(bytes_per_second):
-    units = ("B/s", "KB/s", "MB/s", "GB/s")
-    value = float(bytes_per_second)
-    unit = units[0]
-    for unit in units:
-        if value < 1024 or unit == units[-1]:
-            break
-        value /= 1024
+    value = float(bytes_per_second) * 8 / 1_000_000
+    unit = "Mbps"
     return f"{value:.0f} {unit}" if value >= 10 else f"{value:.1f} {unit}"
 
 
@@ -99,6 +94,7 @@ class SystemWidget(Gtk.Window):
         super().__init__(title="System Monitor")
         self.config = read_config()
         self.size_name = self.config.get("size", "small")
+        self.units = self.config.get("units", "celsius")
         if self.size_name not in SIZE_PRESETS:
             self.size_name = "small"
         self.anchor = self.config.get("anchor", "top-right")
@@ -189,7 +185,12 @@ class SystemWidget(Gtk.Window):
             self.upload.set_text(format_rate((sent - self.net_previous[2]) / elapsed))
             self.net_previous = (now, received, sent)
             temperature = temperature_celsius()
-            self.temperature.set_text(f"{temperature:.0f} °C" if temperature is not None else "N/A")
+            if temperature is None:
+                self.temperature.set_text("N/A")
+            elif self.units == "fahrenheit":
+                self.temperature.set_text(f"{temperature * 9 / 5 + 32:.0f} °F")
+            else:
+                self.temperature.set_text(f"{temperature:.0f} °C")
         except (OSError, ValueError):
             pass
         return True
@@ -214,8 +215,21 @@ class SystemWidget(Gtk.Window):
             item = Gtk.RadioMenuItem.new_with_label(None, label) if first is None else Gtk.RadioMenuItem.new_with_label_from_widget(first, label)
             if first is None: first = item
             item.set_active(name == self.size_name); item.connect("toggled", lambda i, n: i.get_active() and self._apply_size(n), name); menu.append(item)
-        menu.append(Gtk.SeparatorMenuItem()); exit_item = Gtk.MenuItem(label="Exit Widget"); exit_item.connect("activate", lambda _i: self.destroy()); menu.append(exit_item)
+        menu.append(Gtk.SeparatorMenuItem())
+        edit_item = Gtk.MenuItem(label="Edit…"); edit_item.connect("activate", self._edit); menu.append(edit_item)
+        exit_item = Gtk.MenuItem(label="Exit Widget"); exit_item.connect("activate", lambda _i: self.destroy()); menu.append(exit_item)
         menu.show_all(); menu.popup_at_pointer(event); return True
+
+    def _edit(self, _item):
+        dialog = Gtk.Dialog(title="System Monitor Settings", transient_for=self, modal=True)
+        dialog.add_button("Cancel", Gtk.ResponseType.CANCEL); dialog.add_button("Save", Gtk.ResponseType.OK)
+        box = dialog.get_content_area(); box.set_spacing(10); box.set_border_width(18)
+        label = Gtk.Label(label="Temperature units", xalign=0); box.pack_start(label, False, False, 0)
+        combo = Gtk.ComboBoxText(); combo.append("celsius", "Celsius (°C)"); combo.append("fahrenheit", "Fahrenheit (°F)"); combo.set_active_id(self.units); box.pack_start(combo, False, False, 0)
+        dialog.show_all()
+        if dialog.run() == Gtk.ResponseType.OK and combo.get_active_id():
+            self.units = combo.get_active_id(); self.config["units"] = self.units; save_config(self.config); self.refresh()
+        dialog.destroy()
 
     def _drag_begin(self, _gesture, _x, _y): self.drag_start = (self.margin_x, self.margin_y); self.drag_offset = (0, 0)
     def _drag_update(self, _gesture, dx, dy):

@@ -22,4 +22,4 @@ The installer places the widgets in your user profile, installs their systemd us
 
 ## Use
 
-Right-click a widget to change its size, edit weather settings, or exit it. Run `widget` in a terminal to see each widget's status and start one that is stopped.
+Right-click a widget to change its size, edit weather settings or System Monitor temperature units, or exit it. Network rates are shown in Mbps. Run `widget` in a terminal to see each widget's status and start one that is stopped.
