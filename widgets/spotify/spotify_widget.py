@@ -14,7 +14,8 @@ from gi.repository import Gdk, GdkPixbuf, Gio, GLib, Gtk, GtkLayerShell
 
 CONFIG_PATH = Path.home() / ".config/cosmic-spotify-widget/config.json"
 APP_ID = "com.local.CosmicSpotifyWidget"
-SIZES = {"small": (260, 150, 16), "medium": (340, 190, 20), "large": (430, 240, 24)}
+SIZES = {"small": (260, 190, 16), "medium": (340, 240, 20), "large": (430, 300, 24)}
+ART_SIZES = {"small": 88, "medium": 112, "large": 136}
 SNAP_GRID = 8
 
 def config():
@@ -40,7 +41,7 @@ class SpotifyWidget(Gtk.Window):
         self._css()
         self.card = Gtk.EventBox(); self.card.set_name("spotify-card"); self.card.add_events(Gdk.EventMask.BUTTON_PRESS_MASK); self.card.connect("button-press-event", self._menu)
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5); root.set_margin_start(16); root.set_margin_end(16); root.set_margin_top(14); root.set_margin_bottom(14); self.card.add(root)
-        self.art = Gtk.Image(); self.art.set_size_request(54, 54); self.art.set_halign(Gtk.Align.START); root.pack_start(self.art, False, False, 0)
+        self.art = Gtk.Image(); self.art.set_halign(Gtk.Align.START); root.pack_start(self.art, False, False, 0)
         self.title = Gtk.Label(label="SPOTIFY", xalign=0); self.title.get_style_context().add_class("title"); root.pack_start(self.title, False, False, 0)
         self.track = Gtk.Label(label="Spotify is not playing", xalign=0); self.track.get_style_context().add_class("track"); self.track.set_ellipsize(3); root.pack_start(self.track, False, False, 0)
         self.artist = Gtk.Label(label="Open Spotify to begin", xalign=0); self.artist.get_style_context().add_class("artist"); root.pack_start(self.artist, False, False, 0)
@@ -80,13 +81,13 @@ class SpotifyWidget(Gtk.Window):
         try:
             if str(url).startswith("file://"):
                 path = str(url)[7:]
-                pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(path, 54, 54, True)
+                pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(path, self.art_size, self.art_size, True)
             elif str(url).startswith("http"):
                 data = urllib.request.urlopen(str(url), timeout=3).read()
                 loader = GdkPixbuf.PixbufLoader(); loader.write(data); loader.close()
-                pixbuf = loader.get_pixbuf().scale_simple(54, 54, GdkPixbuf.InterpType.BILINEAR)
+                pixbuf = loader.get_pixbuf().scale_simple(self.art_size, self.art_size, GdkPixbuf.InterpType.BILINEAR)
             else:
-                pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(str(url), 54, 54, True)
+                pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(str(url), self.art_size, self.art_size, True)
             self.art.set_from_pixbuf(pixbuf)
         except (OSError, GLib.Error, ValueError, urllib.error.URLError):
             self.art.clear()
@@ -95,7 +96,8 @@ class SpotifyWidget(Gtk.Window):
         if self.proxy: self.proxy.call_sync(method, None, Gio.DBusCallFlags.NONE, 1000, None)
 
     def _apply_size(self, name, save_config=True):
-        self.size_name = name if name in SIZES else "small"; w, h, m = SIZES[self.size_name]; self.card.set_size_request(w, h); self.resize(w, h); self.config["size"] = self.size_name
+        self.size_name = name if name in SIZES else "small"; w, h, m = SIZES[self.size_name]; self.art_size = ART_SIZES[self.size_name]; self.art.set_size_request(self.art_size, self.art_size); self.card.set_size_request(w, h); self.resize(w, h); self.config["size"] = self.size_name
+        if self.art_url: self._load_art(self.art_url)
         if save_config: save(self.config)
 
     def _menu(self, _widget, event):
