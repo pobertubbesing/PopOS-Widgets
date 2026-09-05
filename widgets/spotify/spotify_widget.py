@@ -50,6 +50,7 @@ class SpotifyWidget(Gtk.Window):
         controls = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=18); controls.set_halign(Gtk.Align.START); root.pack_end(controls, False, False, 0)
         for symbol, action in (("⏮", "Previous"), ("▶", "PlayPause"), ("⏭", "Next")):
             button = Gtk.Button(label=symbol); button.set_size_request(44, 36); button.get_style_context().add_class("control"); button.connect("clicked", self._control, action); controls.pack_start(button, False, False, 0)
+            button.get_child().set_halign(Gtk.Align.CENTER); button.get_child().set_valign(Gtk.Align.CENTER); button.get_child().set_xalign(0.5)
             if action == "PlayPause": self.play_button = button
         self.add(self.card); self.proxy = None; self.art_url = None; self._apply_size(self.size_name, False); self.drag = Gtk.GestureDrag.new(self.card); self.drag.set_button(1); self.drag.connect("drag-begin", lambda *_: setattr(self, "drag_start", (self.mx, self.my))); self.drag.connect("drag-update", self._drag); self.drag.connect("drag-end", lambda *_: save({**self.config, "margin_x": self.mx, "margin_y": self.my}))
         self.refresh(); GLib.timeout_add_seconds(2, self.refresh)
